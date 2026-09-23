@@ -15,7 +15,7 @@
 #     CVEs            : N/A
 #     Plugin IDs      : N/A
 #     STIG-ID         : UBTU-24-900600
-#     Documentation   : https://stigviewer.com/stigs/canonical_ubuntu_24.04_lts
+#     Documentation   : https://stigaview.com/products/ubuntu2404/v1r5/UBTU-24-900600/
 #
 # .TESTED ON
 #     Date(s) Tested  : 2026-09-23
