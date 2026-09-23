@@ -18,10 +18,10 @@
 #     Documentation   : https://stigaview.com/products/ubuntu2404/v1r5/UBTU-24-900600/
 #
 # .TESTED ON
-#     Date(s) Tested  : 2026-09-23
-#     Tested By       : Wilson Siano
-#     Systems Tested  : Ubuntu 24.04 LTS (Azure VM)
-#     Bash Ver.       : 5.2.21
+#     Date(s) Tested  : 
+#     Tested By       : 
+#     Systems Tested  : 
+#     Bash Ver.       : 
 #
 # .USAGE
 #     Requires root. Requires the auditd package to be installed.
