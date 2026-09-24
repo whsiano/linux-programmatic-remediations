@@ -10,11 +10,17 @@
 #     GitHub          : github.com/whsiano
 #     Date Created    : 2026-09-23
 #     Last Modified   : 2026-09-23
-#     Version         : 1.0
+#     Version         : 1.1
 #     CVEs            : N/A
 #     Plugin IDs      : N/A
 #     STIG-ID         : UBTU-24-400310
 #     Documentation   : https://stigaview.com/products/ubuntu2404/v1r5/UBTU-24-400310/
+#
+# .CHANGELOG
+#     1.1 - Removes ALL existing PASS_MAX_DAYS entries before writing a single
+#           correct one. v1.0 could match a descriptive comment line and leave
+#           the real setting (99999) in place further down the file.
+#     1.0 - Initial version.
 #
 # .TESTED ON
 #     Date(s) Tested  :
@@ -57,14 +63,17 @@ echo "[*] Backup created: ${LOGIN_DEFS}.bak.${STAMP}"
 
 # --- Remediate -------------------------------------------------------------
 
-if grep -qE "^\s*#?\s*${PARAM}\b" "${LOGIN_DEFS}"; then
-    # Replace the first occurrence, comment out any duplicates after it
-    sed -i -E "0,/^\s*#?\s*${PARAM}\b.*/s||${PARAM}\t${VALUE}|" "${LOGIN_DEFS}"
-    echo "[*] Set: ${PARAM} ${VALUE}"
-else
-    printf '%s\t%s\n' "${PARAM}" "${VALUE}" >> "${LOGIN_DEFS}"
-    echo "[*] Added: ${PARAM} ${VALUE}"
-fi
+# Count active entries before changing anything
+BEFORE="$(grep -cE "^\s*${PARAM}\b" "${LOGIN_DEFS}" || true)"
+echo "[*] Active ${PARAM} entries found: ${BEFORE}"
+
+# Remove every active entry. Descriptive comment lines are left alone, since
+# the regex requires the keyword at the start of the line with no leading '#'.
+sed -i -E "/^\s*${PARAM}\b/d" "${LOGIN_DEFS}"
+
+# Write exactly one correct entry
+printf '%s\t%s\n' "${PARAM}" "${VALUE}" >> "${LOGIN_DEFS}"
+echo "[*] Wrote: ${PARAM} ${VALUE}"
 
 # --- Verify ----------------------------------------------------------------
 
@@ -73,15 +82,18 @@ echo "[*] Verifying ${LOGIN_DEFS}:"
 grep -i "^${PARAM}" "${LOGIN_DEFS}" || true
 echo
 
-FOUND="$(grep -iE "^${PARAM}\s+" "${LOGIN_DEFS}" | head -1 | awk '{print $2}')"
+COUNT="$(grep -cE "^${PARAM}\b" "${LOGIN_DEFS}" || true)"
+FOUND="$(grep -E "^${PARAM}\s+" "${LOGIN_DEFS}" | awk '{print $2}')"
 
-if [[ "${FOUND}" == "${VALUE}" ]]; then
+if [[ "${COUNT}" -eq 1 && "${FOUND}" == "${VALUE}" ]]; then
     echo "[+] UBTU-24-400310 remediated: ${PARAM} = ${FOUND}"
     echo "[!] This applies to NEW accounts only."
     echo "[!] To apply to an existing account: chage -M ${VALUE} <username>"
     echo "[!] To audit existing accounts:      chage -l <username>"
     exit 0
 else
-    echo "[-] Verification failed. Found value: '${FOUND:-none}'. Manual review required." >&2
+    echo "[-] Verification failed: ${COUNT} entries, value '${FOUND:-none}'." >&2
+    echo "[-] Manual review required. Restore with:" >&2
+    echo "      cp ${LOGIN_DEFS}.bak.${STAMP} ${LOGIN_DEFS}" >&2
     exit 1
 fi
